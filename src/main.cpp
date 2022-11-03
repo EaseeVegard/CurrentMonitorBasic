@@ -116,7 +116,7 @@ void loop() {
      float amps = ((root*1e6)*0.0014);
 
      printStatus(amps);
-     delay(500);
+     delay(1000);
        
 
      
