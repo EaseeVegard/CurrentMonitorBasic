@@ -41,7 +41,8 @@ void startScreen (){
   tft.fillScreen(TFT_BLACK);
     }
 
-void printStatus(float amps){ 
+void printStatus(float amps){
+  tft.fillScreen(TFT_BLACK); 
       if (amps<100){
       tft.setTextColor(TFT_GREEN, TFT_BLACK);
       }else{
@@ -100,15 +101,17 @@ void loop() {
   // conn.maintain();
    int16_t results;
 
-     results = ads.readADC_Differential_0_1();
+     
      
      float volts;
-     int n = 1500;
+     int n = 10000;
      float arr[n];
     
      for(int i =0; i < n; i++){
+      results = ads.readADC_Differential_0_1();
       volts = ads.computeVolts(results);
        arr[i] = volts;
+      
      }
      
      float root = rmsValue(arr,n);
@@ -116,7 +119,7 @@ void loop() {
      float amps = ((root*1e6)*0.0014);
 
      printStatus(amps);
-     delay(1000);
+     
        
 
      
