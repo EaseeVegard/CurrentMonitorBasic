@@ -1,0 +1,98 @@
+#ifndef COMMANDS_H
+#define COMMANDS_H
+
+// extern struct commands
+// {
+//     const int REBOOT;
+//     const int RELAY1_ON;
+//     const int RELAY1_OFF;
+
+//     const int PILOTMODE_A;
+//     const int PILOTMODE_B;
+//     const int PILOTMODE_C;
+//     const int PILOTMODE_D;
+//     const int PILOTMODE_E;
+//     const int DIODE_NORMAL;
+//     const int DIODE_SHORT;
+// }
+
+
+
+#define REBOOT 1
+#define STATUS_REPORT 2
+
+#define SET_STATUS_INTERVAL 3
+// argument: seconds between each slowloop
+
+#define REBOOT_ESP2 10
+#define DISABLE_ESP2 11
+#define ENABLE_ESP2 12
+
+#define SCAN_I2C_BUS 14
+
+
+#define RELAY1_ON 21
+#define RELAY1_OFF 22
+#define PILOTMODE_A 50
+#define PILOTMODE_B 51
+#define PILOTMODE_C 52
+#define PILOTMODE_D 53
+#define PILOTMODE_E 54
+
+#define DIODE_NORMAL 60
+#define DIODE_SHORT  61
+
+#define CABLE_RATING_OFF 70
+#define CABLE_RATING_13A 71
+#define CABLE_RATING_20A 72
+#define CABLE_RATING_32A 73
+#define CABLE_RATING_63A 74
+
+#define ENABLE_WELDED_RELAY_L1  111
+#define DISABLE_WELDED_RELAY_L1 112
+#define TRIGGER_WELDED_RELAY_L1 113
+
+#define ENABLE_WELDED_RELAY_L2  121
+#define DISABLE_WELDED_RELAY_L2 122
+#define TRIGGER_WELDED_RELAY_L2 123
+
+#define ENABLE_WELDED_RELAY_L3  131
+#define DISABLE_WELDED_RELAY_L3 132
+#define TRIGGER_WELDED_RELAY_L3 133
+
+#define ENABLE_AC_GROUND_FAULT  141
+#define DISABLE_AC_GROUND_FAULT 142
+#define TRIGGER_AC_GROUND_FAULT 143
+
+#define ENABLE_DC_GROUND_FAULT  151
+#define DISABLE_DC_GROUND_FAULT 152
+#define TRIGGER_DC_GROUND_FAULT 153
+
+#define ENABLE_LOAD_L1 161
+#define DISABLE_LOAD_L1 162
+
+#define ENABLE_LOAD_L2 171
+#define DISABLE_LOAD_L2 172
+
+#define ENABLE_LOAD_L3 181
+#define DISABLE_LOAD_L3 182
+
+#define MEASURE_CURRENT_L1 201
+#define MEASURE_CURRENT_L2 202
+#define MEASURE_CURRENT_L3 203
+#define MEASURE_VOLTAGE_L1 211
+#define MEASURE_VOLTAGE_L2 212
+#define MEASURE_VOLTAGE_L3 213
+#define MEASURE_POWER 203
+#define MEASURE_SPS 290
+#define TEST_MEASUREMENTS 291
+#define MEASURE_PILOT_DUTY_CYCLE 120
+#define MEASURE_PILOT_FREQ 121
+
+#define SET_SERVO_POSITION 301
+#define RUN_SERVO_TEST 309
+#define LOCK_ARM_SENSOR_OUTPUT 390
+
+#define SEND_UART_MESSAGE 515
+
+#endif
