@@ -4,8 +4,7 @@
 #include <SPI.h>
 #include <Wire.h>
 
-//#include "mqttConnection.h"
-//#include "commands.h"
+#include "mqttConnection.h"
 
 #define ssid "EaseeTest"
 #define passwd "TestingEasee"
@@ -13,20 +12,25 @@
 #define I2C_SDA 21
 #define I2C_SCL 22
 
-//#define mqttServer "10.90.6.12"
-//#define mainTopic "QA/500AKiller"
-//#define mqttPort 1883
-//#define clientName "500AkillingMachine"
-//#define wifiLedPin 2
-//#define mqttLedPin 3
+#define mqttServer "10.90.6.12"
+#define mainTopic "QA/500AKiller"
+#define mqttPort 1883
+#define clientName "500AkillingMachine"
+#define wifiLedPin 2
+#define mqttLedPin 3
+float lastamps = 0;
+unsigned long timestart = 0;
+bool current = false;
 
 Adafruit_ADS1115 ads;
 
 
 TFT_eSPI tft = TFT_eSPI();
 
-//void mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength);
-//Connection conn(ssid, passwd, mqttServer, mainTopic, mqttCallback, mqttPort, clientName, wifiLedPin, mqttLedPin);
+void mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength){
+
+}
+Connection conn(ssid, passwd, mqttServer, mainTopic, mqttCallback, mqttPort, clientName, wifiLedPin, mqttLedPin);
 
 void startScreen (){
   tft.fillScreen(TFT_BLACK);
@@ -43,13 +47,15 @@ void startScreen (){
 
 void printStatus(float amps){
   tft.fillScreen(TFT_BLACK); 
+  tft.setTextColor(TFT_GREEN, TFT_BLACK);
       if (amps<100){
-      tft.setTextColor(TFT_GREEN, TFT_BLACK);
+      tft.drawFloat(amps,0,60,30,8); 
       }else{
-      tft.setTextColor(TFT_RED, TFT_BLACK);
+      tft.drawFloat(amps,0,30,30,8); 
       }
+      
 
-      tft.drawFloat(amps,0,60,30,8);   
+        
 }
 
 // Function to calculate rms value
@@ -89,8 +95,8 @@ void setup() {
     // set higher SPS (ADC1115 supports up to 860sps )
     ads.setDataRate(RATE_ADS1115_860SPS);
 
-  // conn.connect();
-  // conn.debug("Hello!");
+   conn.connect();
+   conn.debug("Hello!");
 
    ads.setGain(GAIN_SIXTEEN);
 
@@ -98,14 +104,13 @@ void setup() {
 }
 
 void loop() {
-  // conn.maintain();
-   int16_t results;
-
-     
-     
+  conn.maintain();
+  int16_t results;
+     unsigned long now = millis();
      float volts;
-     int n = 10000;
+     int n = 172;
      float arr[n];
+     
     
      for(int i =0; i < n; i++){
       results = ads.readADC_Differential_0_1();
@@ -113,14 +118,36 @@ void loop() {
        arr[i] = volts;
       
      }
-     
+
      float root = rmsValue(arr,n);
 
      float amps = ((root*1e6)*0.0014);
 
-     printStatus(amps);
-     
-       
+     if(amps>=10.0 && lastamps < 10.0){
+      timestart = millis();
+      conn.debug("Starting timer!");
+      bool current = true;
+      String currentflowing = mainTopic "/currentflowing_bool";
+      String currentflowing_bool = String(current);
+      conn.publish(currentflowing,currentflowing_bool);
+     }else if(amps<=10.0 && lastamps > 10.0){
+      unsigned long cycletime = millis() - timestart;
+      String timetopic = mainTopic "/cycletime_s";
+      String cycletime_S = String(cycletime/1000.0,0);
+      conn.publish(timetopic,cycletime_S);
+      conn.debug("Timer stopped!");
+      current = false;
+      String currentflowing = mainTopic "/currentflowing_bool";
+      String currentflowing_bool = String(current);
+      conn.publish(currentflowing,currentflowing_bool);
+     }
+     lastamps = amps;
 
-     
+     printStatus(amps);
+     String amps_S = String(amps,1);
+     String topic = mainTopic "/current_A";
+     conn.publish(topic,amps_S);
+
+
+          
 }

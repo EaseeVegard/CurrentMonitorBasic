@@ -1,10 +1,7 @@
 #include <Arduino.h>
 #include "mqttConnection.h"
-#include "commands.h"
 #include <PubSubClient.h>
 #include <WiFi.h>
-// #include <SPI.h>
-// #include <Adafruit_ADS1X15.h>
 
 Connection::Connection
 (
@@ -19,7 +16,6 @@ Connection::Connection
     int mqttLedPin=5
     )
 {
-
     _ssid = wifi_ssid;
     _passwd = wifi_passwd;
     _host = mqttHost;
@@ -29,8 +25,6 @@ Connection::Connection
     _debugTopic = mainTopic + "/debug";
     _jsonTopic = mainTopic + "/json";
     _crTopic = mainTopic + "/commandResponse";
-    // WiFiClient _wifiClient; // already defined in .h
-    // PubSubClient _mqttClient(_host.c_str(), _port, _mqttCallback, _wifiClient);
     _mqttClient.setServer(_host.c_str(), _port );
     _mqttClient.setClient(_wifiClient);
     _mqttClient.setCallback(callback);
@@ -38,17 +32,8 @@ Connection::Connection
     _mqttOk = false;
     _wifiLed = wifiLedPin;
     _mqttLed = mqttLedPin;
-    // _statusInterval_ms = 5000;
-    //_jsonDoc = new DynamicJsonDocument(1024);
-    // _jsonDoc = _jsonDoc(1024);
     pinMode(_wifiLed, OUTPUT);
     pinMode(_mqttLed, OUTPUT);
-
-    // _timeClient(_ntpUDP);
-
-
-    
-
 }
 
 DynamicJsonDocument _jsonDoc(uint16_t size) 
@@ -201,9 +186,6 @@ void Connection::printAllParams()
     Serial.println(_port);
     Serial.print("MQTT host: ");
     Serial.println(_host);
-    // Serial.print();
-    // Serial.print();
-    // Serial.print();
 }
 
 void Connection::sendStatus()
@@ -410,19 +392,13 @@ unsigned long Connection::getTimestamp()
 void Connection::updateJsonDoc()
 {
     DynamicJsonDocument jsonDoc(1024);
-    
-    // NTPClient timeClient(_ntpUDP);
-    // timeClient.begin();
-    // timeClient.update();
 
-    
     jsonDoc["ip"] = WiFi.localIP().toString();
     jsonDoc["mac"] = WiFi.macAddress();
     jsonDoc["uptime"] = millis();
     jsonDoc["freeHeap"] = ESP.getFreeHeap();
     jsonDoc["totalHeap"] = ESP.getHeapSize();
     jsonDoc["jsonMemoryUsage"] = jsonDoc.memoryUsage();
-    //jsonDoc["timestamp"] = timeClient.getFormattedTime();
     jsonDoc["timestamp"] = getTimestamp();
 
     String json_s;
@@ -431,42 +407,3 @@ void Connection::updateJsonDoc()
     jsonDoc.clear();
 
 }
-
-
-
-
-
-
-
-
-
-Publisher::Publisher(PubSubClient mqttClient) 
-{
-    _mqttClient = mqttClient;
-}
-
-void Publisher::pub(String topic, String value_s) {
-  _mqttClient.publish(topic.c_str(), value_s.c_str() );
-}
-
-void Publisher::pub(String topic, unsigned long value) {
-  String value_s = String(value);
-  _mqttClient.publish(topic.c_str(), value_s.c_str() );
-}
-
-void Publisher::pub(String topic, int value) {
-  String value_s = String(value);
-  _mqttClient.publish(topic.c_str(), value_s.c_str() );
-}
-
-void Publisher::pub(String topic, float value, int decimal_places = 2) {
-  String value_s = String(value, decimal_places);
-  _mqttClient.publish(topic.c_str(), value_s.c_str() );
-}
-
-// void debug(String message, String topic=debugTopic) {
-//   mqttClient.publish(topic.c_str(), message.c_str() );
-//   Serial.print(topic);
-//   Serial.print(": ");
-//   Serial.println(message);
-// }

@@ -8,7 +8,6 @@
 #include <ArduinoJson.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#include "commands.h"
 
 
 // all library code before endif
@@ -40,18 +39,8 @@ class Connection
         int publish(String topic, String message);
         void setStatusLeds();
         void updateJsonDoc();
-        //void mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength);
         void sendCommandResponse(String uniqueId, int commandId, JsonArray args, bool wasAccepted, float returnMeasurement);
         unsigned long getTimestamp();
-        // int getStatusInterval_ms();
-        // void setStatusInterval_s(int statusInterval);
-        
-        // NTPClient getTime();
-
-        // void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
-        
-
-
 
     private:
         void(*commandFunctionPointer)(String, int, JsonArray, bool);
@@ -62,7 +51,6 @@ class Connection
         String _clientName;
         String _mainTopic;
         WiFiClient _wifiClient;
-        // void _mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength);
         PubSubClient _mqttClient;
         String _callbackTopic;
         String _debugTopic;
@@ -72,42 +60,9 @@ class Connection
         bool _wifiOk;
         int _wifiLed;
         int _mqttLed;
-        // int _statusInterval_ms;
         DynamicJsonDocument _jsonDoc(uint16_t);
         WiFiUDP _ntpUDP;
         NTPClient _timeClient(WiFiUDP);
-        // Adafruit_ADS1115 _ads;
-
-
-
 };
-
-
-class Publisher 
-{
-// creates an object which will pbulish a message to topic while also writing to Serial port.
-    public:
-        Publisher(PubSubClient mqttClient);
-        void pub(String topic, String value_s);
-        void pub(String topic, unsigned long value);
-        void pub(String topic, int value);
-        void pub(String topic, float value, int decimal_places );
-    private:
-        PubSubClient _mqttClient;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #endif
