@@ -121,7 +121,7 @@ void loop() {
 
      float root = rmsValue(arr,n);
 
-     float amps = ((root*1e6)*0.0014);
+     float amps = ((root*1e6)*0.01542);
 
      if(amps>=10.0 && lastamps < 10.0){
       timestart = millis();
@@ -133,7 +133,7 @@ void loop() {
      }else if(amps<=10.0 && lastamps > 10.0){
       unsigned long cycletime = millis() - timestart;
       String timetopic = mainTopic "/cycletime_s";
-      String cycletime_S = String(cycletime/1000.0,0);
+      String cycletime_S = String(cycletime/1000.0,2);
       conn.publish(timetopic,cycletime_S);
       conn.debug("Timer stopped!");
       current = false;
