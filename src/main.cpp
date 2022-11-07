@@ -9,8 +9,8 @@
 #define ssid "EaseeTest"
 #define passwd "TestingEasee"
 
-#define I2C_SDA 21
-#define I2C_SCL 22
+#define I2C_SDA 25
+#define I2C_SCL 26
 
 #define mqttServer "10.90.6.12"
 #define mainTopic "QA/500AKiller"
@@ -82,7 +82,7 @@ float rmsValue(float arr[], int n){
 void setup() {
    Serial.begin(115200);
    tft.begin();
-   tft.setRotation(1); //Landscape
+   tft.setRotation(3); //Landscape
 
    startScreen();
 
