@@ -128,7 +128,7 @@ void loop() {
       maxAmps = amps;
      }
 
-     String maxCurrent = mainTopic "/MaxCurent";
+     String maxCurrent = mainTopic "/maxCurent_A";
      String maxAmps_A = String(maxAmps);
      conn.publish(maxCurrent,maxAmps_A);
 
