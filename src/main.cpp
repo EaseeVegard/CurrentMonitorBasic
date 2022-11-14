@@ -21,6 +21,7 @@
 float lastamps = 0;
 unsigned long timestart = 0;
 bool current = false;
+float maxAmps = 0;
 
 Adafruit_ADS1115 ads;
 
@@ -108,7 +109,7 @@ void loop() {
   int16_t results;
      unsigned long now = millis();
      float volts;
-     int n = 172;
+     int n = 86;
      float arr[n];
      
     
@@ -122,6 +123,14 @@ void loop() {
      float root = rmsValue(arr,n);
 
      float amps = ((root*1e6)*0.01542);
+
+     if(amps > maxAmps){
+      maxAmps = amps;
+     }
+
+     String maxCurrent = mainTopic "/MaxCurent";
+     String maxAmps_A = String(maxAmps);
+     conn.publish(maxCurrent,maxAmps_A);
 
      if(amps>=10.0 && lastamps < 10.0){
       timestart = millis();
