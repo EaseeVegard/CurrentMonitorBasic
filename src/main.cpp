@@ -11,6 +11,8 @@
 
 #define I2C_SDA 25
 #define I2C_SCL 26
+#define button 12
+#define pulse 15
 
 #define mqttServer "10.90.6.12"
 #define mainTopic "QA/500AKiller"
@@ -18,10 +20,14 @@
 #define clientName "500AkillingMachine"
 #define wifiLedPin 2
 #define mqttLedPin 3
+
 float lastamps = 0;
 unsigned long timestart = 0;
+unsigned long lasttime = 0;
 bool current = false;
+float amps = 0;
 float maxAmps = 0;
+unsigned long relayintervall = 1;
 
 Adafruit_ADS1115 ads;
 
@@ -80,10 +86,33 @@ float rmsValue(float arr[], int n){
   return root;
 }
 
+float readAmps(int n){
+  int16_t results;
+  float volts;
+  float arr[n];
+  
+  for(int i =0; i < n; i++){
+    results = ads.readADC_Differential_0_1();
+    volts = ads.computeVolts(results);
+    arr[i] = volts;
+    }
+     
+  float root = rmsValue(arr,n);
+
+  float amps = ((root*1e6)*0.01542);
+
+  return amps;
+}
+
 void setup() {
    Serial.begin(115200);
    tft.begin();
    tft.setRotation(3); //Landscape
+
+   pinMode(button,INPUT);
+   pinMode(pulse,OUTPUT);
+
+   digitalWrite (pulse, LOW);
 
    startScreen();
 
@@ -106,57 +135,58 @@ void setup() {
 
 void loop() {
   conn.maintain();
-  int16_t results;
      unsigned long now = millis();
-     float volts;
      int n = 86;
-     float arr[n];
-     
-    
-     for(int i =0; i < n; i++){
-      results = ads.readADC_Differential_0_1();
-      volts = ads.computeVolts(results);
-       arr[i] = volts;
-      
-     }
-
-     float root = rmsValue(arr,n);
-
-     float amps = ((root*1e6)*0.01542);
+     amps = readAmps(n);
 
      if(amps > maxAmps){
-      maxAmps = amps;
+      maxAmps = amps;      
      }
 
-     String maxCurrent = mainTopic "/maxCurent_A";
-     String maxAmps_A = String(maxAmps);
-     conn.publish(maxCurrent,maxAmps_A);
-
-     if(amps>=10.0 && lastamps < 10.0){
-      timestart = millis();
-      conn.debug("Starting timer!");
-      bool current = true;
-      String currentflowing = mainTopic "/currentflowing_bool";
-      String currentflowing_bool = String(current);
-      conn.publish(currentflowing,currentflowing_bool);
-     }else if(amps<=10.0 && lastamps > 10.0){
-      unsigned long cycletime = millis() - timestart;
-      String timetopic = mainTopic "/cycletime_s";
-      String cycletime_S = String(cycletime/1000.0,2);
+     if (digitalRead(button) == LOW){
+      lasttime = millis();
+      maxAmps = 0;
+      while(millis() < (lasttime + relayintervall)){
+        digitalWrite (pulse, HIGH);
+        amps = readAmps(n);
+        if(amps > maxAmps){
+          maxAmps = amps;
+        }
+      }
+      digitalWrite(pulse,LOW);
+     }
+    else {
+      if(amps>=10.0 && lastamps < 10.0){
+        timestart = millis();
+        conn.debug("Starting timer!");
+        bool current = true;
+        String currentflowing = mainTopic "/currentflowing_bool";
+        String currentflowing_bool = String(current);
+        conn.publish(currentflowing,currentflowing_bool);
+      }else if(amps<=10.0 && lastamps > 10.0){
+        unsigned long cycletime = millis() - timestart;
+        String timetopic = mainTopic "/cycletime_s";
+        String cycletime_S = String(cycletime/1000.0,2);
+        
       conn.publish(timetopic,cycletime_S);
       conn.debug("Timer stopped!");
       current = false;
+      
+      String maxCurrent = mainTopic "/maxCurrent_A";
+      String maxAmps_A = String(maxAmps);
+      conn.publish(maxCurrent,maxAmps_A);
+      
+      maxAmps = 0;
+
       String currentflowing = mainTopic "/currentflowing_bool";
       String currentflowing_bool = String(current);
       conn.publish(currentflowing,currentflowing_bool);
      }
+    }
      lastamps = amps;
 
      printStatus(amps);
      String amps_S = String(amps,1);
      String topic = mainTopic "/current_A";
      conn.publish(topic,amps_S);
-
-
-          
 }
