@@ -34,10 +34,18 @@ Adafruit_ADS1115 ads;
 
 TFT_eSPI tft = TFT_eSPI();
 
-void mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength){
+void mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength);
 
-}
 Connection conn(ssid, passwd, mqttServer, mainTopic, mqttCallback, mqttPort, clientName, wifiLedPin, mqttLedPin);
+
+void mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength){
+  String message = "";
+  for(int i = 0; i < payloadLength; i++) {
+    message += (char) payload[i];
+  }
+  relayintervall = message.toInt();
+  conn.debug("Relayintervall set to: "+ String(relayintervall) + "ms");
+}
 
 void startScreen (){
   tft.fillScreen(TFT_BLACK);
@@ -135,58 +143,62 @@ void setup() {
 
 void loop() {
   conn.maintain();
-     unsigned long now = millis();
-     int n = 86;
-     amps = readAmps(n);
+  unsigned long now = millis();
+  int n = 86;
+  amps = readAmps(n);
 
-     if(amps > maxAmps){
-      maxAmps = amps;      
-     }
+  if(amps > maxAmps){
+  maxAmps = amps;      
+  }
 
-     if (digitalRead(button) == LOW){
-      lasttime = millis();
-      maxAmps = 0;
-      while(millis() < (lasttime + relayintervall)){
-        digitalWrite (pulse, HIGH);
-        amps = readAmps(n);
-        if(amps > maxAmps){
-          maxAmps = amps;
-        }
+  if (digitalRead(button) == LOW){
+    maxAmps = 0;
+    lasttime = millis();
+    maxAmps = 0;
+    digitalWrite (pulse, HIGH);
+    while(millis() < (lasttime + relayintervall)){
+      amps = readAmps(20);
+      if(amps > maxAmps){
+        maxAmps = amps;
       }
-      digitalWrite(pulse,LOW);
-     }
-    else {
-      if(amps>=10.0 && lastamps < 10.0){
-        timestart = millis();
-        conn.debug("Starting timer!");
-        bool current = true;
-        String currentflowing = mainTopic "/currentflowing_bool";
-        String currentflowing_bool = String(current);
-        conn.publish(currentflowing,currentflowing_bool);
-      }else if(amps<=10.0 && lastamps > 10.0){
-        unsigned long cycletime = millis() - timestart;
-        String timetopic = mainTopic "/cycletime_s";
-        String cycletime_S = String(cycletime/1000.0,2);
-        
-      conn.publish(timetopic,cycletime_S);
-      conn.debug("Timer stopped!");
-      current = false;
-      
-      String maxCurrent = mainTopic "/maxCurrent_A";
-      String maxAmps_A = String(maxAmps);
-      conn.publish(maxCurrent,maxAmps_A);
-      
+    }
+    digitalWrite(pulse,LOW);
+    unsigned long actualPulseLength = millis() - lasttime;
+    conn.debug("pulse completed with: " + String(relayintervall) + "ms");
+    conn.publish(mainTopic "/actualPulseLength_ms",String(actualPulseLength));
+  }
+  else {
+    if(amps>=10.0 && lastamps < 10.0){
+      timestart = millis();
+      conn.debug("Starting timer!");
       maxAmps = 0;
-
+      bool current = true;
       String currentflowing = mainTopic "/currentflowing_bool";
       String currentflowing_bool = String(current);
       conn.publish(currentflowing,currentflowing_bool);
-     }
+    }else if(amps<=10.0 && lastamps > 10.0){
+      unsigned long cycletime = millis() - timestart;
+      String timetopic = mainTopic "/cycletime_s";
+      String cycletime_S = String(cycletime/1000.0,2);
+      
+      conn.publish(timetopic,cycletime_S);
+      conn.debug("Timer stopped!");
+      current = false;
+    
+      String currentflowing = mainTopic "/currentflowing_bool";
+      String currentflowing_bool = String(current);
+      conn.publish(currentflowing,currentflowing_bool);
     }
-     lastamps = amps;
+  }
+  lastamps = amps;
 
-     printStatus(amps);
-     String amps_S = String(amps,1);
-     String topic = mainTopic "/current_A";
-     conn.publish(topic,amps_S);
+  printStatus(amps);
+  String amps_S = String(amps,1);
+  String topic = mainTopic "/current_A";
+  conn.publish(topic,amps_S);
+  if(maxAmps>5){
+    String maxCurrent = mainTopic "/maxCurrent_A";
+    String maxAmps_A = String(maxAmps);
+    conn.publish(maxCurrent,maxAmps_A);
+  }
 }
