@@ -11,7 +11,7 @@
 
 #define I2C_SDA 25
 #define I2C_SCL 26
-#define button 12
+#define button 13
 #define pulse 15
 
 #define mqttServer "10.90.6.12"
@@ -28,6 +28,7 @@ bool current = false;
 float amps = 0;
 float maxAmps = 0;
 unsigned long relayintervall = 1;
+unsigned long samplesToRead = 1;
 
 Adafruit_ADS1115 ads;
 
@@ -43,8 +44,8 @@ void mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength
   for(int i = 0; i < payloadLength; i++) {
     message += (char) payload[i];
   }
-  relayintervall = message.toInt();
-  conn.debug("Relayintervall set to: "+ String(relayintervall) + "ms");
+  samplesToRead = message.toInt();
+  conn.debug("Samples to read set to: "+ String(samplesToRead));
 }
 
 void startScreen (){
@@ -157,14 +158,14 @@ void loop() {
     maxAmps = 0;
     digitalWrite (pulse, HIGH);
     while(millis() < (lasttime + relayintervall)){
-      amps = readAmps(20);
+      amps = readAmps(samplesToRead);
       if(amps > maxAmps){
         maxAmps = amps;
       }
     }
     digitalWrite(pulse,LOW);
     unsigned long actualPulseLength = millis() - lasttime;
-    conn.debug("pulse completed with: " + String(relayintervall) + "ms");
+    conn.debug("pulse completed with: " + String(actualPulseLength) + "ms");
     conn.publish(mainTopic "/actualPulseLength_ms",String(actualPulseLength));
   }
   else {
