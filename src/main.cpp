@@ -29,11 +29,24 @@ float amps = 0;
 float maxAmps = 0;
 unsigned long relayintervall = 1;
 unsigned long samplesToRead = 1;
+//unsigned long waitTime = 180000;
+float waitTime_s = 180.0;
+int repetitions = 3;
 
 Adafruit_ADS1115 ads;
 
 
 TFT_eSPI tft = TFT_eSPI();
+
+int findDelimiter(String text, char delimiter) {
+  int i;
+  for (i = 0; i < text.length(); i++) {
+    if(text[i] == delimiter) {
+      return(i);
+    }
+  }
+  return(-1);
+}
 
 void mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength);
 
@@ -44,8 +57,22 @@ void mqttCallback(char* callbackTopic, byte* payload, unsigned int payloadLength
   for(int i = 0; i < payloadLength; i++) {
     message += (char) payload[i];
   }
-  samplesToRead = message.toInt();
-  conn.debug("Samples to read set to: "+ String(samplesToRead));
+  message.trim();
+  int argPos = findDelimiter(message, ':');
+  String command = message.substring(0, argPos);
+  String arg = message.substring(argPos+1);
+  if(command == "samplesToRead"){
+    samplesToRead = arg.toInt();
+    conn.debug("Samples to read set to: "+ String(samplesToRead));
+  }else if(command == "waitTime_s"){
+    waitTime_s = arg.toInt();
+    conn.debug("waitTime set to: "+ String(waitTime_s)+"s");
+  }else if(command == "repetitions"){
+    repetitions = arg.toInt();
+    conn.debug("repetitions set to: "+ String(repetitions));
+  }else{
+    conn.debug("command not found! command="+command+" arg="+arg);
+  }
 }
 
 void startScreen (){
@@ -59,19 +86,36 @@ void startScreen (){
   tft.print("Killing machine");
   delay(5000);
   tft.fillScreen(TFT_BLACK);
-    }
+}
 
 void printStatus(float amps){
   tft.fillScreen(TFT_BLACK); 
   tft.setTextColor(TFT_GREEN, TFT_BLACK);
-      if (amps<100){
-      tft.drawFloat(amps,0,60,30,8); 
-      }else{
-      tft.drawFloat(amps,0,30,30,8); 
-      }
-      
+  if (amps<100){
+  tft.drawFloat(amps,0,60,30,8); 
+  }else{
+  tft.drawFloat(amps,0,30,30,8); 
+  }     
+}
 
-        
+void waitScreen (float maxAmps, int testNumber){
+  for (int i = waitTime_s; i>0.0; i--){
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_GREEN, TFT_BLACK);
+    tft.setCursor(2,30);
+    tft.print("maxAmps: ");
+    tft.drawFloat(maxAmps,0,190,20,4);
+    tft.setCursor(2,70);
+    tft.print("Next test: ");
+    tft.drawFloat((i),0,190,50,4);
+    tft.setCursor(2,90);
+    tft.print("Test number: ");
+    tft.drawFloat(testNumber,0,190,90,4);
+    String waitTimeTopic = mainTopic "/waitTime_s";
+    String waitTimeValue = String(i)+("s");
+    conn.publish(waitTimeTopic,waitTimeValue);
+    delay(1000);
+  }
 }
 
 // Function to calculate rms value
@@ -153,20 +197,27 @@ void loop() {
   }
 
   if (digitalRead(button) == LOW){
-    maxAmps = 0;
-    lasttime = millis();
-    maxAmps = 0;
-    digitalWrite (pulse, HIGH);
-    while(millis() < (lasttime + relayintervall)){
-      amps = readAmps(samplesToRead);
-      if(amps > maxAmps){
-        maxAmps = amps;
+    for (int i=0; i<repetitions; i++){
+      maxAmps = 0;
+      lasttime = millis();
+      maxAmps = 0;
+      int testNumber = i+1;
+      digitalWrite (pulse, HIGH);
+      while(millis() < (lasttime + relayintervall)){
+        amps = readAmps(samplesToRead);
+        if(amps > maxAmps){
+          maxAmps = amps;
+        }
       }
+      digitalWrite(pulse,LOW);
+      unsigned long actualPulseLength = millis() - lasttime;
+      conn.debug("pulse completed with: " + String(actualPulseLength) + "ms");
+      conn.publish(mainTopic "/actualPulseLength_ms",String(actualPulseLength));
+      String maxCurrent = mainTopic "/maxCurrent_A";
+      String maxAmps_A = String(maxAmps);
+      conn.publish(maxCurrent,maxAmps_A);
+      waitScreen(maxAmps,i);
     }
-    digitalWrite(pulse,LOW);
-    unsigned long actualPulseLength = millis() - lasttime;
-    conn.debug("pulse completed with: " + String(actualPulseLength) + "ms");
-    conn.publish(mainTopic "/actualPulseLength_ms",String(actualPulseLength));
   }
   else {
     if(amps>=10.0 && lastamps < 10.0){
